@@ -1,6 +1,6 @@
 import unittest
 
-from textnode import TextNode, TextType, text_node_to_html_node
+from textnode import TextNode, TextType, text_node_to_html_node, split_nodes_delimeter
 
 
 class TestTextNode(unittest.TestCase):
@@ -54,6 +54,39 @@ class TestTextNode(unittest.TestCase):
             self.assertNotEqual(html_node.props, None)
         else:
             self.assertEqual(html_node.props["href"], "https://example.com")
+
+
+    def test_split_nodes_delimiter_at_start(self):
+        old_node = TextNode("**bold** at start", TextType.TEXT)
+        new_nodes = split_nodes_delimeter([old_node], "**", TextType.BOLD)
+
+        out = [
+            TextNode("bold", TextType.BOLD),
+            TextNode(" at start", TextType.TEXT)
+        ]
+
+        self.assertListEqual(new_nodes, out)
+
+    def test_split_nodes_delimiter_many(self):
+        old_nodes = [
+            TextNode("This is **bold1** and **bold2**", TextType.TEXT),
+            TextNode("This is **bold3** and _italic1_", TextType.TEXT)
+        ]
+        new_nodes = split_nodes_delimeter(old_nodes, "**", TextType.BOLD)
+        new_nodes = split_nodes_delimeter(new_nodes, "_", TextType.ITALIC)
+
+        out = [
+            TextNode("This is ", TextType.TEXT),
+            TextNode("bold1", TextType.BOLD),
+            TextNode(" and ", TextType.TEXT),
+            TextNode("bold2", TextType.BOLD),
+            TextNode("This is ", TextType.TEXT),
+            TextNode("bold3", TextType.BOLD),
+            TextNode(" and ", TextType.TEXT),
+            TextNode("italic1", TextType.ITALIC),
+        ]
+
+        self.assertListEqual(new_nodes, out)
 
 
 

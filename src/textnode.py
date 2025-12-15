@@ -66,5 +66,38 @@ def text_node_to_html_node(text_node : TextNode) -> LeafNode:
 
             return LeafNode("img", "", {"src": url, "alt":value})
         
+# create new inline TextNodes from composite TextNodes
+        
+def split_nodes_delimeter(old_nodes:list[TextNode], delimiter:str, text_type:TextType) -> list[TextNode]:
+    new_nodes = []
+
+    for old_node in old_nodes:
+        if old_node.text_type is not TextType.TEXT:
+            new_nodes.append(old_node)
+            continue
+        sections = old_node.text.split(delimiter)
+
+        if len(sections) % 2 == 0:
+            raise ValueError("Invalid markdown syntax")
+
+        for i, text in enumerate(sections):
+            
+            if text == "":
+                continue
+
+            if  i %2 == 0:
+                new_nodes.append(TextNode(text, TextType.TEXT))
+            else:
+                new_nodes.append(TextNode(text, text_type))
+    return new_nodes
+            
+            
+
+        
+
+            
+
+        
+        
     
 
