@@ -1,5 +1,6 @@
 from enum import Enum
 from htmlnode import LeafNode
+from collections.abc import Callable
 import re
 
 class TextType(Enum):
@@ -93,14 +94,14 @@ def split_nodes_delimeter(old_nodes:list[TextNode], delimiter:str, text_type:Tex
     return new_nodes
             
     
-def extract_markdown_images(text) -> list[tuple[str, str]]:
+def extract_markdown_images(text:str) -> list[tuple[str, str]]:
     image_pattern = r"!\[([^\[\]]*)\]\(([^\(\)]*)\)"
     
     matches = re.findall(image_pattern, text)
 
     return matches
 
-def extract_markdown_links(text) -> list[tuple[str, str]]:
+def extract_markdown_links(text:str) -> list[tuple[str, str]]:
     not_prefix = r"?<!"
     cap_text = r"[^\[\]]*"
     url = r"[^\(\)]*"
@@ -111,11 +112,47 @@ def extract_markdown_links(text) -> list[tuple[str, str]]:
 
     return matches
 
-        
-
-            
-
-        
-        
     
+def split_nodes(old_nodes:list[TextNode], extractor:Callable[[str], list[tuple[str, str]]], text_type:TextType) -> list[TextNode]:
 
+    new_nodes:list[TextNode] = []
+
+
+    for old_node in old_nodes:
+
+        if old_node.text_type != TextType.TEXT:
+            new_nodes.append(old_node)
+            continue
+        text = old_node.text
+        
+
+        links = (extractor(text))
+
+        if len(links) == 0:
+            new_nodes.append(old_node)
+            continue
+
+        for _, link in enumerate(links):
+            link_text, url = link
+
+            delimiter = {
+                TextType.LINK : f"[{link_text}]({url})",
+                TextType.IMAGE : f"![{link_text}]({url})"
+            }
+            
+            sections = text.split(delimiter[text_type], 1)
+
+            if len(sections) != 2:
+                raise ValueError("invalid markdown link section not closed")
+            
+            if sections[0] != "":
+                new_nodes.append(TextNode(sections[0], TextType.TEXT))
+    
+            new_nodes.append(TextNode(link_text, text_type, url))
+
+            text = sections[1]
+        if text != "":
+            new_nodes.append(TextNode(text, TextType.TEXT))
+
+    
+    return new_nodes
